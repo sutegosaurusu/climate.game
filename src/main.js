@@ -241,7 +241,7 @@ let decayPerSec = 3;
 let tempPerDeg = 3 / 360;
 
 // ===== 都市データ =====
-const citiesPromise = fetch('/cities.json')
+const citiesPromise = fetch(`${import.meta.env.BASE_URL}cities.json`)
   .then(r => {
     if (!r.ok) {
       throw new Error('cities.json の読み込みに失敗');
