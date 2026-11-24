@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ケッペン気候区分の計算式</title>
+
+<style>
+body{
+    font-family:sans-serif;
+    line-height:1.8;
+    max-width:1000px;
+    margin:auto;
+    padding:20px;
+    background:#f5f7fa;
+}
+
+header{
+    background:#0066cc;
+    color:white;
+    padding:25px;
+    border-radius:10px;
+}
+
+section{
+    background:white;
+    padding:20px;
+    margin-top:20px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,.1);
+}
+
+h1,h2{
+    color:#004080;
+}
+
+.code{
+    background:#eeeeee;
+    padding:10px;
+    border-radius:5px;
+    font-family:monospace;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+table,th,td{
+    border:1px solid #ccc;
+}
+
+th,td{
+    padding:10px;
+}
+
+th{
+    background:#ddeeff;
+}
+</style>
+
+<script>
+function calculateBW(){
+
+    let temp = parseFloat(document.getElementById("temp").value);
+    let rain = parseFloat(document.getElementById("rain").value);
+    let type = document.getElementById("season").value;
+
+    let R;
+
+    if(type==="summer"){
+        R = 20 * temp + 280;
+    }
+    else if(type==="winter"){
+        R = 20 * temp;
+    }
+    else{
+        R = 20 * temp + 140;
+    }
+
+    let result="";
+
+    if(rain < R/2){
+        result = "BW（砂漠気候）";
+    }
+    else if(rain < R){
+        result = "BS（ステップ気候）";
+    }
+    else{
+        result = "乾燥帯ではありません";
+    }
+
+    document.getElementById("output").innerHTML =
+        "乾燥限界値 R = " + R.toFixed(1) + " mm<br>" +
+        "判定結果：<strong>" + result + "</strong>";
+}
+</script>
+
+</head>
+<body>
+
+<header>
+<h1>ケッペン気候区分の計算式</h1>
+<p>乾燥帯(B気候)の判定方法を数式付きで詳しく解説</p>
+</header>
+
+<section>
+<h2>ケッペン気候区分とは</h2>
+
+<p>
+ケッペン気候区分は気温と降水量を利用して世界の気候を分類する方法です。
+世界中の多くの地理学者や気候学者によって利用されています。
+</p>
+
+<ul>
+<li>A：熱帯</li>
+<li>B：乾燥帯</li>
+<li>C：温帯</li>
+<li>D：冷帯（亜寒帯）</li>
+<li>E：寒帯</li>
+</ul>
+
+</section>
+
+<section>
+<h2>乾燥帯判定の計算式</h2>
+
+<p>まず乾燥限界値 R を求めます。</p>
+
+<h3>① 夏季集中型</h3>
+
+<div class="code">
+R = 20T + 280
+</div>
+
+<h3>② 冬季集中型</h3>
+
+<div class="code">
+R = 20T
+</div>
+
+<h3>③ 中間型</h3>
+
+<div class="code">
+R = 20T + 140
+</div>
+
+<p>
+T = 年平均気温(℃)<br>
+R = 乾燥限界値(mm)
+</p>
+
+</section>
+
+<section>
+
+<h2>B気候の判定式</h2>
+
+<p>年降水量を P とします。</p>
+
+<h3>砂漠気候(BW)</h3>
+
+<div class="code">
+P ＜ R / 2
+</div>
+
+<h3>ステップ気候(BS)</h3>
+
+<div class="code">
+R / 2 ≦ P ＜ R
+</div>
+
+<h3>乾燥帯ではない</h3>
+
+<div class="code">
+P ≧ R
+</div>
+
+</section>
+
+<section>
+
+<h2>計算例</h2>
+
+<p>年平均気温25℃、夏季集中型の場合</p>
+
+<div class="code">
+R = 20 × 25 + 280
+
+R = 780 mm
+</div>
+
+<p>年降水量400mmなら</p>
+
+<div class="code">
+390 ≦ 400 ＜ 780
+</div>
+
+<p>よって BS（ステップ気候）になります。</p>
+
+</section>
+
+<section>
+
+<h2>乾燥帯判定ツール</h2>
+
+<label>年平均気温(℃)</label><br>
+<input type="number" id="temp" value="25"><br><br>
+
+<label>年降水量(mm)</label><br>
+<input type="number" id="rain" value="400"><br><br>
+
+<label>降水パターン</label><br>
+
+<select id="season">
+<option value="summer">夏季集中型</option>
+<option value="middle">中間型</option>
+<option value="winter">冬季集中型</option>
+</select>
+
+<br><br>
+
+<button onclick="calculateBW()">判定する</button>
+
+<p id="output"></p>
+
+</section>
+
+<section>
+
+<h2>A～E気候の基本条件</h2>
+
+<table>
+
+<tr>
+<th>気候</th>
+<th>条件</th>
+</tr>
+
+<tr>
+<td>A 熱帯</td>
+<td>最寒月平均気温 18℃以上</td>
+</tr>
+
+<tr>
+<td>B 乾燥帯</td>
+<td>年降水量が乾燥限界値未満</td>
+</tr>
+
+<tr>
+<td>C 温帯</td>
+<td>最寒月 -3℃以上 18℃未満</td>
+</tr>
+
+<tr>
+<td>D 冷帯</td>
+<td>最寒月 -3℃未満</td>
+</tr>
+
+<tr>
+<td>E 寒帯</td>
+<td>最暖月 10℃未満</td>
+</tr>
+
+</table>
+
+</section>
+
+</body>
+</html>

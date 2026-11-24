@@ -1,0 +1,301 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>雨温図ゲーム</title>
+
+<style>
+  html,body{
+    margin:0;height:100%;overflow:hidden;touch-action:none;
+    user-select:none;-webkit-user-select:none;font-family:system-ui,sans-serif
+  }
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block}
+  button{font-family:inherit;cursor:pointer}
+
+  /* ===== ゲーム中の表示 ===== */
+  #hud{
+    display:none;position:fixed;top:env(safe-area-inset-top);
+    left:0;right:0;text-align:center;color:#fff;
+    pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.4)
+  }
+  #bar{height:6px;background:#fff4}
+  #bar i{display:block;height:100%;width:0;background:#fff}
+  #month{font-size:48px;font-weight:700}
+  #temp{font-size:28px}
+  #goal{font-size:15px;min-height:20px;padding:0 12px}
+  #quit{
+    display:none;position:fixed;
+    top:calc(env(safe-area-inset-top) + 14px);left:10px;
+    padding:8px 12px;border:0;border-radius:10px;
+    background:#0006;color:#fff;font-size:14px
+  }
+
+  /* ===== 気温回転盤 ===== */
+  #dial{
+    display:none;position:fixed;left:50%;
+    bottom:calc(env(safe-area-inset-bottom) + 16px);
+    width:min(60vw,260px);aspect-ratio:1;
+    transform:translateX(-50%);border-radius:50%;
+    border:4px solid #fff8;background:rgba(255,255,255,.13)
+  }
+  #dialRot{position:absolute;inset:0;pointer-events:none}
+  #dialRot .ticks{
+    position:absolute;inset:0;border-radius:50%;
+    background:repeating-conic-gradient(
+      rgba(255,255,255,.7) 0 1.5deg,transparent 1.5deg 15deg
+    );
+    -webkit-mask:radial-gradient(circle closest-side,transparent 80%,#000 81%);
+    mask:radial-gradient(circle closest-side,transparent 80%,#000 81%)
+  }
+  #dialRot .arm{
+    position:absolute;left:50%;top:16%;width:6px;height:34%;
+    margin-left:-3px;background:rgba(255,255,255,.85);border-radius:3px
+  }
+  #dialRot .knob{
+    position:absolute;left:50%;top:5%;width:22%;aspect-ratio:1;
+    margin-left:-11%;border-radius:50%;background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.35)
+  }
+
+  /* ===== 共通画面 ===== */
+  .screen{
+    display:none;position:fixed;inset:0;color:#fff;
+    box-sizing:border-box;
+    padding:calc(env(safe-area-inset-top) + 16px)
+      16px calc(env(safe-area-inset-bottom) + 16px)
+  }
+  .center{
+    flex-direction:column;align-items:center;
+    justify-content:center;gap:16px;text-align:center
+  }
+
+  /* ===== ホーム ===== */
+  #home{background:linear-gradient(#0b1d3a55,#0b1d3aaa)}
+  #home h1{
+    margin:0 0 8px;font-size:34px;
+    text-shadow:0 2px 8px rgba(0,0,0,.4)
+  }
+
+  .menu-btn{
+    width:min(88vw,420px);min-height:88px;
+    border:0;border-radius:20px;color:#fff;
+    font-size:22px;font-weight:700;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:4px;
+    box-shadow:0 6px 16px rgba(0,0,0,.3)
+  }
+  .menu-btn small{
+    font-size:13px;font-weight:400;
+    opacity:.92;padding:0 12px
+  }
+
+  .menu-btn-wrap{position:relative;width:min(88vw,420px)}
+  .menu-btn-wrap .menu-btn{width:100%}
+
+  #btn-howto-small{
+    position:absolute;top:-10px;right:-10px;
+    background:#ff5252;color:#fff;border:2px solid #fff;
+    border-radius:50px;padding:6px 12px;
+    font-size:12px;font-weight:700;
+    box-shadow:0 4px 10px rgba(0,0,0,.3);z-index:10
+  }
+
+  #btn-free{background:#2f7be5}
+  #btn-zone{background:#e0883a}
+  #btn-city{background:#2fa56b}
+  #btn-keppen{background:#8c52ff}
+
+  #homeMsg{
+    margin:0;min-height:20px;
+    font-size:14px;color:#ffd7d7
+  }
+
+  /* ===== 都市ミッション難易度選択 ===== */
+  #cityDifficulty{background:#0b1d3af2}
+  #cityDifficulty h2{margin:0;font-size:28px}
+  #cityDifficulty .difficulty-desc{
+    margin:0 0 8px;line-height:1.7;font-size:14px
+  }
+  #btn-city-easy{background:#2fa56b}
+  #btn-city-hard{background:#a34b62}
+
+  /* ===== 遊び方 ===== */
+  #howto{background:#0b1d3af2;z-index:100}
+  #howto .howto-box{
+    background:rgba(255,255,255,.1);padding:24px;
+    border-radius:16px;width:min(88vw,400px);
+    text-align:left;line-height:1.8;font-size:16px
+  }
+
+  /* ===== お題 ===== */
+  #brief{background:#0b1d3adc}
+  #brief h2{margin:0;font-size:22px}
+  #briefBody .target{
+    font-size:32px;font-weight:700;margin:8px 0
+  }
+  #briefBody p{margin:6px 0;line-height:1.6}
+  #briefChart{display:none;width:min(92vw,520px);height:34vh}
+
+  /* ===== ボタン ===== */
+  .row{
+    display:flex;flex-wrap:wrap;
+    gap:10px;justify-content:center
+  }
+  .btn{
+    padding:14px 22px;font-size:17px;font-weight:700;
+    border:0;border-radius:12px;color:#fff;background:#2f7be5
+  }
+  .btn.sub{background:#ffffff33}
+  .btn.go{background:#2fa56b}
+
+  /* ===== 結果 ===== */
+  #result{
+    display:none;background:#0b1d3af2;
+    overflow:auto;touch-action:pan-y
+  }
+  #chart{width:100%;height:46vh;display:block}
+  #info h1{margin:8px 0}
+  #info small{opacity:.75}
+  #resultBtns{margin:16px 0 32px}
+</style>
+</head>
+
+<body>
+<canvas id="scene"></canvas>
+
+<!-- ===== ゲーム中 ===== -->
+<div id="hud">
+  <div id="bar"><i></i></div>
+  <div id="month">1月</div>
+  <div id="temp">0.0℃</div>
+  <div id="goal"></div>
+</div>
+
+<button id="quit">← ホーム</button>
+
+<div id="dial">
+  <div id="dialRot">
+    <div class="ticks"></div>
+    <div class="arm"></div>
+    <div class="knob"></div>
+  </div>
+</div>
+
+<!-- ===== ホーム ===== -->
+<section id="home" class="screen center">
+  <h1>雨温図ゲーム</h1>
+
+  <div class="menu-btn-wrap">
+    <button id="btn-howto-small">遊び方 ?</button>
+    <button id="btn-free" class="menu-btn">
+      自由プレイ
+      <small>雨と気温を自由に作って、似た都市を探す</small>
+    </button>
+  </div>
+
+  <button id="btn-zone" class="menu-btn">
+    気候帯ミッション
+    <small>指定された気候帯をつくれ！</small>
+  </button>
+
+  <button id="btn-city" class="menu-btn">
+    都市ミッション
+    <small>ランダムな都市の雨温図に近づけ！</small>
+  </button>
+
+  <button id="btn-keppen" class="menu-btn"
+    onclick="location.href='keppen.html'">
+    ケッペン気候区分図鑑
+    <small>気候区分の解説と計算式を見る</small>
+  </button>
+
+  <p id="homeMsg"></p>
+</section>
+
+<!-- ===== 都市ミッション難易度選択 ===== -->
+<section id="cityDifficulty" class="screen center">
+  <h2>都市ミッション</h2>
+
+  <p class="difficulty-desc">
+    挑戦する難易度を選んでください。
+  </p>
+
+  <button id="btn-city-easy" class="menu-btn">
+    簡単
+    <small>プレイ中に目標の気温・降水量が表示されます</small>
+  </button>
+
+  <button id="btn-city-hard" class="menu-btn">
+    難しい
+    <small>プレイ中は目標の気温・降水量が表示されません</small>
+  </button>
+
+  <button id="cityDifficultyBack" class="btn sub">
+    戻る
+  </button>
+</section>
+
+<!-- ===== 遊び方画面 ===== -->
+<section id="howto" class="screen center">
+  <h2>遊び方</h2>
+
+  <div class="howto-box">
+    <p>💧 タップすると水が出るよ❤</p>
+    <p>
+      🌀 回転盤を１回転すると３度上がるよ。<br>
+      だけど毎秒0.85度0度に近づくよ。
+    </p>
+  </div>
+
+  <button id="howtoClose" class="btn">もどる</button>
+</section>
+
+<!-- ===== ミッションのお題 ===== -->
+<section id="brief" class="screen center">
+  <h2 id="briefTitle"></h2>
+  <div id="briefBody"></div>
+  <canvas id="briefChart"></canvas>
+
+  <div class="row">
+    <button id="briefStart" class="btn go">スタート</button>
+    <button id="briefReroll" class="btn sub">お題をかえる</button>
+    <button id="briefBack" class="btn sub">戻る</button>
+  </div>
+</section>
+
+<!-- ===== 結果 ===== -->
+<section id="result" class="screen">
+  <canvas id="chart"></canvas>
+  <div id="info"></div>
+
+  <div id="resultBtns" class="row">
+    <button id="again" class="btn">もう一度</button>
+    <button id="nextBtn" class="btn go">次のお題</button>
+    <button id="toHome" class="btn sub">ホームへ</button>
+  </div>
+</section>
+
+<!-- ===== 遊び方ボタン ===== -->
+<script>
+  const howtoScreen = document.getElementById('howto');
+  const homeScreen = document.getElementById('home');
+
+  document.getElementById('btn-howto-small')
+    .addEventListener('click', (e) => {
+      e.stopPropagation();
+      homeScreen.style.display = 'none';
+      howtoScreen.style.display = 'flex';
+    });
+
+  document.getElementById('howtoClose')
+    .addEventListener('click', () => {
+      howtoScreen.style.display = 'none';
+      homeScreen.style.display = 'flex';
+    });
+</script>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
